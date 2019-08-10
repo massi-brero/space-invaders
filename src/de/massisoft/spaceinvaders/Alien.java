@@ -22,7 +22,36 @@ public class Alien extends Sprite {
 		setX(getX() + direction);
 	}
 	
+	public Bomb getBomb() {
+		return bomb;
+	}
+	
 	public class Bomb extends Sprite {
+		private final String bombImg = "src/images/bomb.png";
+		private boolean destroyed;
+		
+		public Bomb() {
+			initBomb();
+		}
+
+		private void initBomb() {
+			
+			setDestroyed(true);
+			this.setX(x);
+			this.setY(y);
+			
+			ImageIcon ii = new ImageIcon(bombImg);
+			setImage(ii.getImage());			
+		}
+
+		public boolean isDestroyed() {
+			return destroyed;
+		}
+
+		public void setDestroyed(boolean destroyed) {
+			this.destroyed = destroyed;
+		}
+		
 		
 	}
 }

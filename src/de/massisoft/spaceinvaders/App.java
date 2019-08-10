@@ -7,6 +7,8 @@ import javax.swing.JFrame;
 
 public class App extends JFrame implements Constants {
 	
+	private static final long serialVersionUID = 1L;
+
 	public App() {
 		// TODO Auto-generated constructor stub
 	}
