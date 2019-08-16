@@ -8,7 +8,7 @@ public class Player extends Sprite implements Constants {
 	private final int START_X = 280;
 	private final int START_Y = 270;
 
-	private final String playerImg = "src/images/ship.png";
+	private final String playerImg = "src/images/ship_small.png";
 	private int width;
 
 	public Player() {

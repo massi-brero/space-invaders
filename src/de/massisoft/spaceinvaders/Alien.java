@@ -4,7 +4,10 @@ import javax.swing.ImageIcon;
 
 public class Alien extends Sprite {
 	private Bomb bomb;
-	private final String alienImg = "src/mages/alien.png";
+	private final String alienImg = "src/images/alien_small.png";
+	
+	public Alien() {
+	}
 	
 	public Alien(int x, int y) {
 		initAlient(x, y);
@@ -26,8 +29,13 @@ public class Alien extends Sprite {
 		return bomb;
 	}
 	
+	public String getAlienImg() {
+		return alienImg;
+	}
+	
+	
 	public class Bomb extends Sprite {
-		private final String bombImg = "src/images/bomb.png";
+		private final String bombImg = "src/images/bomb_small.png";
 		private boolean destroyed;
 		
 		public Bomb() {
@@ -51,7 +59,6 @@ public class Alien extends Sprite {
 		public void setDestroyed(boolean destroyed) {
 			this.destroyed = destroyed;
 		}
-		
 		
 	}
 }

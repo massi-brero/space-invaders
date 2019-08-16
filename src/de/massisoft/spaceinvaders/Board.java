@@ -1,16 +1,16 @@
 package de.massisoft.spaceinvaders;
 
 import java.awt.Color;
-import java.awt.Component;
 import java.awt.Dimension;
 import java.awt.Font;
 import java.awt.FontMetrics;
 import java.awt.Graphics;
+import java.awt.Toolkit;
 import java.awt.event.KeyAdapter;
 import java.awt.event.KeyEvent;
 import java.util.ArrayList;
 import java.util.Iterator;
-import java.awt.Toolkit;
+import java.util.Random;
 
 import javax.swing.ImageIcon;
 import javax.swing.JPanel;
@@ -24,18 +24,19 @@ public class Board extends JPanel implements Runnable, Constants {
 
 	private final int ALIEN_INIT_X = 150;
 	private final int ALIEN_INIT_Y = 5;
-	private int direction = 1;
+	private int direction = -1;
 	private int deaths = 0;
 
 	private boolean running = true;
-	private final String explImg = "src/images/explosion.png";
+	private final String explImg = "src/images/explosion_small.png";
+	private final String alienImg = "src/images/alien_counter.png";
 	private String message = "GAME OVER";
 
 	private Thread animator;
 
 	private static final long serialVersionUID = 6433999049281448757L;
 
-	public Board() {
+	public Board() {;
 		initBoard();
 	}
 
@@ -56,6 +57,8 @@ public class Board extends JPanel implements Runnable, Constants {
 	}
 
 	private void gameInit() {
+		aliens = new ArrayList<Alien>();
+		
 		for (int i = 0; i < 4; i++) {
 			for (int j = 0; j < 6; j++) {
 				Alien alien = new Alien(ALIEN_INIT_X + 18 * j, ALIEN_INIT_Y + 18 * i);
@@ -73,7 +76,7 @@ public class Board extends JPanel implements Runnable, Constants {
 	}
 
 	public void drawAliens(Graphics g) {
-		Iterator<Alien> it = aliens.iterator();
+		//Iterator<Alien> it = aliens.iterator();
 
 		for (Alien alien : aliens) {
 			if (alien.isVisible()) {
@@ -113,6 +116,18 @@ public class Board extends JPanel implements Runnable, Constants {
 			}
 		}
 	}
+	
+	public void drawCounter(Graphics g) {
+		String message = deaths + " / " + NUMBER_OF_ALIENS_TO_DESTROY;
+		ImageIcon ii = new ImageIcon(alienImg);
+		int fontSize = 10;
+		int height = (int) Math.floor(BOARD_HEIGHT - ALIEN_HEIGHT * 4.5);
+		g.drawImage(ii.getImage(), 10, height, this);
+		
+		Font counterFont = new Font("Courier", Font.BOLD, fontSize);
+		g.setFont(counterFont);
+		g.drawString(message, 30 , height + fontSize - 1);
+	}
 
 	@Override
 	protected void paintComponent(Graphics g) {
@@ -123,16 +138,16 @@ public class Board extends JPanel implements Runnable, Constants {
 		g.setColor(Color.green);
 		
 		if (running) {
-			g.drawLine(0, 0, dim.width, dim.height);
+			g.drawLine(0, GROUND, BOARD_WIDTH, GROUND);
 			drawAliens(g);
 			drawPlayer(g);
 			drawShot(g);
 			drawBombing(g);
+			drawCounter(g);
 		}
 		
 		Toolkit.getDefaultToolkit().sync();
 		g.dispose();
-		
 	}
 	
 	public void gameOver() {
@@ -142,18 +157,19 @@ public class Board extends JPanel implements Runnable, Constants {
 		g.fillRect(0, 0, BOARD_WIDTH, BOARD_HEIGHT);
 		
 		g.setColor(new Color(0, 32, 48));
-		g.fillRect(50, BOARD_WIDTH / 2 - 30, BOARD_HEIGHT- 50, 50);
+		g.fillRect(50, BOARD_WIDTH / 2 - 30, BOARD_WIDTH- 100, 50);
 		
 		g.setColor(Color.white);
-		g.fillRect(50, BOARD_WIDTH / 2 - 30, BOARD_HEIGHT - 50, 50);
+		g.drawRect(50, BOARD_WIDTH / 2 - 30, BOARD_WIDTH - 100, 50);
 		
 		Font small = new Font("HELVETICA", Font.BOLD, 14);
 		FontMetrics metrics = this.getFontMetrics(small);
 		
 		g.setColor(Color.white);
 		g.setFont(small);
-		g.drawString(message, (BOARD_WIDTH  - metrics.stringWidth(message) / 2 ), BOARD_HEIGHT / 2);
+		g.drawString(message, (BOARD_WIDTH - metrics.stringWidth(message)) / 2 , BOARD_WIDTH / 2);
 	}
+	
 	
 	public void animationCycle() {
 		if (deaths == NUMBER_OF_ALIENS_TO_DESTROY) {
@@ -177,11 +193,11 @@ public class Board extends JPanel implements Runnable, Constants {
 				int alienX = alien.getX();
 				int alienY = alien.getY();
 				
-				if (alien.isVisible()) {
+				if (alien.isVisible() && shot.isVisible()) {
 					if (shotX >= alienX
 						&& shotX <= alienX + ALIEN_WIDTH
-						&& shotY >= alienY
-						&& shotY <= alienY - ALIEN_HEIGHT
+						&& shotY <= alienY
+						&& shotY >= alienY - ALIEN_HEIGHT
 						) {
 						ImageIcon ii = new ImageIcon(explImg);
 						alien.setImage(ii.getImage());
@@ -199,6 +215,7 @@ public class Board extends JPanel implements Runnable, Constants {
 			} else {
 				shot.setY(shot.getY() - 4);
 			}
+		}
 			
 			/*
 			 * Alien
@@ -214,7 +231,7 @@ public class Board extends JPanel implements Runnable, Constants {
 					}
 				}
 				
-				if(alien.getX() <= BORDER_LEFT && direction == 1) {
+				if(alien.getX() <= BORDER_LEFT && direction != 1) {
 					direction = 1;
 					Iterator<Alien> i2 = aliens.iterator();
 					
@@ -225,7 +242,87 @@ public class Board extends JPanel implements Runnable, Constants {
 					
 				}
 			}
+			
+			Iterator<Alien> it = aliens.iterator();
+			while (it.hasNext()) {
+				Alien alien = (Alien) it.next();
+				
+				if (alien.isVisible()) {
+					if (alien.getY() > GROUND - ALIEN_HEIGHT) {
+						running = false;
+						message = "INVASION!";
+					}
+					
+					alien.act(direction);
+				}
+			}
+			
+			/*
+			 * Bomb
+			 */
+			Random generator = new Random();
+			
+			for (Alien alien : aliens) {
+				int shotChance = generator.nextInt(15);
+				Alien.Bomb b = alien.getBomb();
+				
+				if (shotChance == CHANCE && alien.isVisible() && b.isDestroyed()) {
+					b.setDestroyed(false);
+					b.setX(alien.getX());
+					b.setY(alien.getY());
+				}
+				
+				if (player.isVisible() && !b.isDestroyed()) {
+					if (b.getX() >= player.getX() 
+						&& b.getX() <= player.getX() + PLAYER_WIDTH
+						&& b.getY() >= player.getY() 
+						&& b.getY() <= player.getY() + PLAYER_HEIGHT
+					) {
+						ImageIcon ii = new ImageIcon(explImg);
+						player.setImage(ii.getImage());
+						player.setDying(true);
+						b.setDestroyed(true);
+					}
+				}
+				
+				if (!b.isDestroyed()) {
+					b.setY(b.getY() + 1);
+					
+					if (b.getY() >= GROUND - BOMB_HEIGHT) {
+						b.setDestroyed(true);
+					}
+				}
+			}
 		}
+	
+	
+	@Override
+	public void run() {
+		long beforeTime, timeDiff, sleep;
+		beforeTime = System.currentTimeMillis();
+		
+		while (running) {
+			repaint();
+			animationCycle();
+			
+			timeDiff = System.currentTimeMillis() - beforeTime;
+			sleep = DELAY - timeDiff;
+			
+			if (sleep < 0) {
+				sleep = 2;
+			}
+			
+			try {
+				Thread.sleep(sleep);
+			} catch (InterruptedException e) {
+				System.out.println("interrupted");
+			}
+			
+			beforeTime = System.currentTimeMillis();
+		}
+		
+		gameOver();
+		
 	}
 
 	private class TAdapter extends KeyAdapter {
@@ -235,7 +332,7 @@ public class Board extends JPanel implements Runnable, Constants {
 			player.keyReleased(e);
 		}
 
-		@Override
+		@Override 
 		public void keyPressed(KeyEvent e) {
 			player.keyPressed(e);
 
@@ -252,7 +349,5 @@ public class Board extends JPanel implements Runnable, Constants {
 				}
 			}
 		}
-
 	}
-
 }
